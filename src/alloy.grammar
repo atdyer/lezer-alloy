@@ -1,0 +1,300 @@
+@top Alloy {
+  Module? Open* paragraph*
+}
+
+@precedence {
+  unary @left
+  dotjoin @left
+  boxjoin @left
+  rrestr @left
+  lrestr @left
+  arrow @right
+  intersection @left
+  override @left
+  cardinality @left
+  uniondiff @left
+  bitshift @left
+  exprmult @left
+  compare @left
+  negate @left
+  conjunction @left
+  implication @right
+  bimplication @left
+  disjunction @left
+  keyword
+}
+
+@tokens {
+  identifier { std.asciiLetter (std.asciiLetter | std.digit | $[_'"])* }
+  Number { '0' | $[1-9] std.digit* }
+  whitespace { std.whitespace+ }
+
+  LineComment { ("//" | "--") ![\n]* }
+  BlockComment { "/*" blockCommentRest }
+  blockCommentRest { ![*] blockCommentRest | "*" blockCommentAfterStar }
+  blockCommentAfterStar { "/" | "*" blockCommentAfterStar | ![/*] blockCommentRest }
+  @precedence { BlockComment, LineComment, "/", tk_difference, identifier, Number }
+
+  tk_at { "@" }
+  tk_bar { "|" }
+  tk_bimplication { "<=>" }
+  tk_cardinality { "#" }
+  tk_conj { "&&" }
+  tk_dot { "." }
+  tk_difference { "-" }
+  tk_disj { "||" }
+  tk_eq { "=" }
+  tk_ge { ">=" }
+  tk_gt { ">" }
+  tk_implication { "=>" }
+  tk_intersection { "&" }
+  tk_le { "=<" }
+  tk_lt { "<" }
+  tk_lrestr { "<:" }
+  tk_lshift { "<<" }
+  tk_negate { "!" }
+  tk_override { "++" }
+  tk_prod { "->" }
+  tk_rrestr { ":>" }
+  tk_rshift { ">>" }
+  tk_rshiftz { ">>>" }
+  tk_rtranclose { "*" }
+  tk_tranclose { "^" }
+  tk_transpose { "~" }
+  tk_union { "+" }
+
+}
+
+kw_abstract{ kw<"abstract"> }
+kw_all { kw<"all"> }
+kw_and { kw<"and"> }
+kw_as { kw<"as"> }
+kw_assert { kw<"assert"> }
+kw_but { kw<"but"> }
+kw_check { kw<"check"> }
+kw_disj { kw<"disj"> }
+kw_else { kw<"else"> }
+kw_enum { kw<"enum"> }
+kw_exactly { kw<"exactly"> }
+kw_expect { kw<"expect"> }
+kw_extends { kw<"extends"> }
+kw_fact { kw<"fact"> }
+kw_for { kw<"for"> }
+kw_fun { kw<"fun"> }
+kw_iden { kw<"iden"> }
+kw_iff { kw<"iff"> }
+kw_implies { kw<"implies"> }
+kw_in { kw<"in"> }
+kw_Int { kw<"Int"> | kw<"int"> }
+kw_let { kw<"let"> }
+kw_lone { kw<"lone"> }
+kw_module { kw<"module"> }
+kw_no { kw<"no"> }
+kw_none { kw<"none"> }
+kw_not { kw<"not"> }
+kw_one { kw<"one"> }
+kw_open { kw<"open"> }
+kw_or { kw<"or"> }
+kw_pred { kw<"pred"> }
+kw_private { kw<"private"> }
+kw_run { kw<"run"> }
+kw_seq { kw<"seq"> }
+kw_seqint { kw<"seq/Int"> }
+kw_set { kw<"set"> }
+kw_sig { kw<"sig"> }
+kw_some { kw<"some"> }
+kw_sum { kw<"sum"> }
+kw_this { kw<"this"> }
+kw_univ { kw<"univ"> }
+
+expression {
+  LetExpression |
+  QuantifiedDeclaration |
+  UnaryExpression |
+  BinaryExpression |
+  ArrowExpression |
+  ComparisonExpression |
+  IfElseExpression |
+  BoxJoinExpression |
+  Constant |
+  ParenExpression |
+  Block |
+  BlockDeclaration
+}
+
+paragraph {
+  FactDeclaration |
+  AssertDeclaration |
+  FunctionDeclaration |
+  PredicateDeclaration |
+  CommandDeclaration |
+  EnumDeclaration |
+  SignatureDeclaration
+}
+
+sigqual {
+  kw_abstract | kw_lone | kw_one | kw_some | kw_private
+}
+
+
+Arrow {
+  !keyword (kw_some | kw_one | kw_lone | kw_set)? tk_prod (kw_some | kw_one | kw_lone | kw_set)?
+}
+
+ArrowExpression {
+  expression !arrow Arrow expression
+}
+
+AssertDeclaration {
+  kw_assert Name? Block
+}
+
+Bar {
+  tk_bar expression
+}
+
+BinaryExpression {
+  expression !dotjoin tk_dot expression |
+  expression !rrestr tk_rrestr expression |
+  expression !lrestr tk_lrestr expression |
+  expression !intersection tk_intersection expression |
+  expression !override tk_override expression |
+  expression !uniondiff (tk_union | tk_difference) expression |
+  expression !conjunction (kw_and | tk_conj) expression |
+  expression !bimplication (kw_iff | tk_bimplication) expression |
+  expression !disjunction (kw_or | tk_disj) expression |
+  expression !implication (kw_implies | tk_implication) expression |
+  expression !bitshift (tk_lshift | tk_rshift | tk_rshiftz) expression
+}
+
+Block {
+  "{" expression* "}"
+}
+
+BlockDeclaration {
+  "{" commaSep1<Declaration> (Block | Bar) "}"
+}
+
+BoxJoinExpression {
+  expression !boxjoin "[" commaSep<expression> "]"
+}
+
+CommandDeclaration {
+  (Name ":")? (kw_run | kw_check) (Name | Block) Scope
+}
+
+CompareOperator {
+  tk_eq | kw_in | tk_lt | tk_le | tk_gt | tk_ge
+}
+
+ComparisonExpression {
+  expression !compare (kw_not | tk_negate)? CompareOperator expression
+}
+
+Constant {
+  Number | NegativeNumber | kw_none | kw_iden | kw_univ | kw_Int | kw_seqint | tk_at? Name
+}
+
+Declaration {
+  kw_private? kw_disj? commaSep1<Name> ":" kw_disj? expression
+}
+
+EnumDeclaration {
+  kw_enum Name "{" commaSep1<Name> "}"
+}
+
+FactDeclaration {
+  kw_fact Name? Block
+}
+
+FunctionDeclaration {
+  kw_private? kw_fun (Ref ".")? Name ParenDeclaration? ":" expression Block
+}
+
+IfElseExpression {
+  expression !implication (kw_implies | tk_implication) expression kw_else expression
+}
+
+LetDeclaration {
+  Name tk_eq expression
+}
+
+LetExpression {
+  kw_let commaSep1<LetDeclaration> (Block | Bar)
+}
+
+Module {
+  kw_module Name ("[" kw_exactly? Name ("," kw_exactly? Name)* "]")?
+}
+
+Name {
+  (kw_this | identifier) ("/" identifier)*
+}
+
+NegativeNumber {
+  tk_difference Number
+}
+
+Open {
+  kw_private? kw_open Name ("[" commaSep1<Ref> "]")? (kw_as Name)?
+}
+
+ParenDeclaration {
+  "(" commaSep<Declaration> ")" | "[" commaSep<Declaration> "]"
+}
+
+ParenExpression {
+  "(" expression ")"
+}
+
+PredicateDeclaration {
+  kw_private? kw_pred (Ref ".")? Name ParenDeclaration? Block
+}
+
+Ref {
+  !keyword (Name | kw_univ | kw_Int | kw_seqint)
+}
+
+Scope {
+  kw_for Number ~scopeambig (kw_but commaSep1<TypeScope>)? (kw_expect ("0" | "1"))? |
+  kw_for commaSep1<TypeScope> (kw_expect ("0" | "1"))? |
+  (kw_expect ("0" | "1"))?
+}
+
+SignatureBlock {
+  "{" commaSep<Declaration> "}"
+}
+
+SignatureDeclaration {
+  sigqual* kw_sig commaSep1<Name> SignatureExtension? SignatureBlock Block?
+}
+
+SignatureExtension {
+  kw_extends Ref | kw_in Ref (tk_union Ref)*
+}
+
+TypeScope {
+  kw_exactly? Number ~scopeambig (Name | kw_Int | kw_seq)?
+}
+
+UnaryExpression {
+  (tk_transpose | tk_tranclose | tk_rtranclose) !unary expression |
+  tk_cardinality !cardinality expression |
+  (kw_no | kw_some | kw_lone | kw_one | kw_set | kw_seq) ~quantambig expression |
+  (tk_negate | kw_not) !negate expression
+}
+
+Quantifier {
+  kw_all | kw_no | kw_some | kw_lone | kw_one | kw_sum
+}
+
+QuantifiedDeclaration {
+  Quantifier ~quantambig commaSep1<Declaration> (Block | Bar)
+}
+
+kw<term>           { @specialize[name={term}]<identifier, term> }
+commaSep<content>  { "" | content ("," content)* }
+commaSep1<content> { content ("," content)* }
+
+@skip { whitespace | LineComment | BlockComment }
+@detectDelim

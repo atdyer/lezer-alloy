@@ -1,0 +1,154 @@
+@top Alloy {
+  PredicateDeclaration
+}
+
+@precedence {
+  unary @left
+  dotjoin @left
+  boxjoin @left
+  rrestr @left
+  lrestr @left
+  arrow @right
+  intersection @left
+  override @left
+  cardinality @left
+  uniondiff @left
+  bitshift @left
+  exprmult @left
+  compare @left
+  negate @left
+  conjunction @left
+  implication @right
+  bimplication @left
+  disjunction @left
+  keyword @left
+  constant @left
+}
+
+@tokens {
+  identifier { std.asciiLetter (std.asciiLetter | std.digit | $[_'"])* }
+  Number { '0' | $[1-9] std.digit* }
+  whitespace { std.whitespace+ }
+
+  LineComment { ("//" | "--") ![\n]* }
+  BlockComment { "/*" blockCommentRest }
+  blockCommentRest { ![*] blockCommentRest | "*" blockCommentAfterStar }
+  blockCommentAfterStar { "/" | "*" blockCommentAfterStar | ![/*] blockCommentRest }
+  @precedence { BlockComment, LineComment, "/", TK_difference, identifier, Number }
+
+  TK_at { "@" }
+  TK_bar { "|" }
+  TK_bimplication { "<=>" }
+  TK_cardinality { "#" }
+  TK_conj { "&&" }
+  TK_dot { "." }
+  TK_difference { "-" }
+  TK_disj { "||" }
+  TK_eq { "=" }
+  TK_ge { ">=" }
+  TK_gt { ">" }
+  TK_implication { "=>" }
+  TK_intersection { "&" }
+  TK_le { "=<" }
+  TK_lt { "<" }
+  TK_lrestr { "<:" }
+  TK_lshift { "<<" }
+  TK_negate { "!" }
+  TK_override { "++" }
+  TK_prod { "->" }
+  TK_rrestr { ":>" }
+  TK_rshift { ">>" }
+  TK_rshiftz { ">>>" }
+  TK_rtranclose { "*" }
+  TK_tranclose { "^" }
+  TK_transpose { "~" }
+  TK_union { "+" }
+}
+
+KW_abstract{ kw<"abstract"> }
+KW_all { kw<"all"> }
+KW_and { kw<"and"> }
+KW_as { kw<"as"> }
+KW_assert { kw<"assert"> }
+KW_but { kw<"but"> }
+KW_check { kw<"check"> }
+KW_disj { kw<"disj"> }
+KW_else { kw<"else"> }
+KW_enum { kw<"enum"> }
+KW_exactly { kw<"exactly"> }
+KW_expect { kw<"expect"> }
+KW_extends { kw<"extends"> }
+KW_fact { kw<"fact"> }
+KW_for { kw<"for"> }
+KW_fun { kw<"fun"> }
+KW_iden { kw<"iden"> }
+KW_iff { kw<"iff"> }
+KW_implies { kw<"implies"> }
+KW_in { kw<"in"> }
+KW_Int { kw<"Int"> | kw<"int"> }
+KW_let { kw<"let"> }
+KW_lone { kw<"lone"> }
+KW_module { kw<"module"> }
+KW_no { kw<"no"> }
+KW_none { kw<"none"> }
+KW_not { kw<"not"> }
+KW_one { kw<"one"> }
+KW_open { kw<"open"> }
+KW_or { kw<"or"> }
+KW_pred { kw<"pred"> }
+KW_private { kw<"private"> }
+KW_run { kw<"run"> }
+KW_seq { kw<"seq"> }
+KW_seqint { kw<"seq/Int"> }
+KW_set { kw<"set"> }
+KW_sig { kw<"sig"> }
+KW_some { kw<"some"> }
+KW_sum { kw<"sum"> }
+KW_this { kw<"this"> }
+KW_univ { kw<"univ"> }
+
+expression {
+  Constant |
+  QuantifiedDeclaration |
+  UnaryExpression
+}
+
+Bar {
+  "|" expression
+}
+
+Block {
+  "{" expression* "}"
+}
+
+Constant {
+  !constant Number | NegativeNumber | Name
+}
+
+Declaration {
+  commaSep1<Name> ":" expression
+}
+
+Name {
+  (kw<"this"> | identifier) ("/" identifier)*
+}
+
+NegativeNumber {
+  TK_difference Number
+}
+
+PredicateDeclaration {
+  KW_pred Name Block
+}
+
+QuantifiedDeclaration {
+  (kw<"some"> | kw<"all">) commaSep1<Declaration> (Block | Bar)
+}
+
+UnaryExpression {
+  kw<"some"> expression
+}
+
+kw<term> { @specialize[name={term}]<identifier, term> }
+commaSep1<content> { content ("," content)* }
+@skip { whitespace | LineComment | BlockComment }

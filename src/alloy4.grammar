@@ -1,0 +1,181 @@
+@top Alloy {
+  Module? Import* Paragraph*
+}
+
+@precedence {
+  unary @left
+  dotjoin @left
+  boxjoin @left
+  restriction @left
+  arrow @left
+  intersection @left
+  override @left
+  cardinality @left
+  uniondiff @left
+  exprmult @left
+  compareneg @left
+  compare @left
+  negate @left
+  conjunction @left
+  implication @right
+  bimplication @left
+  disjunction @left
+}
+
+Module {
+  kw<"module"> QualName ("[" commaSep1<Name> "]")?
+}
+
+Import {
+  kw<"open"> QualName ("[" commaSep1<QualName> "]")? (kw<"as"> Name)?
+}
+
+Paragraph {
+  Signature |
+  Fact |
+  Predicate |
+  Function |
+  Assert |
+  Command
+}
+
+Signature {
+  kw<"abstract">? Multiplicity? kw<"sig"> commaSep1<Name> Extends? "{" commaSep<Declaration> "}" Block?
+}
+
+Extends {
+  kw<"extends"> QualName |
+  kw<"in"> QualName ("+" QualName)*
+}
+
+Declaration {
+  kw<"disj">? commaSep1<Name> ":" kw<"disj"> expression
+}
+
+Fact {
+  kw<"fact"> Name? Block
+}
+
+Predicate {
+  kw<"pred"> (QualName ".")? Name paraDeclaration? Block
+}
+
+Function {
+  kw<"fun"> (QualName ".")? Name paraDeclaration? ":" expression Block
+}
+
+Assert {
+  kw<"assert"> Name? Block
+}
+
+Command {
+  (Name ":")? (kw<"run"> | kw<"check">) (QualName | Block) Scope?
+}
+
+Scope {
+  kw<"for"> ~number (kw<"but"> commaSep1<TypeScope>)? |
+  kw<"for"> commaSep1<TypeScope>
+}
+
+TypeScope {
+  kw<"exactly">? ~number QualName
+}
+
+@tokens {
+  identifier { std.asciiLetter (std.asciiLetter | std.digit | $[_'"])* }
+  number { '0' | $[1-9] std.digit* }
+  whitespace { std.whitespace+ }
+
+  LineComment { ("//" | "--") ![\n]* }
+  BlockComment { "/*" blockCommentRest }
+  blockCommentRest { ![*] blockCommentRest | "*" blockCommentAfterStar }
+  blockCommentAfterStar { "/" | "*" blockCommentAfterStar | ![/*] blockCommentRest }
+  @precedence { BlockComment, LineComment, "/", "-", "this", identifier }
+
+  bar { "|" }
+  bimplication { "<=>" }
+  conj { "&&" }
+  disj { "||" }
+  ge { ">=" }
+  implication { "=>" }
+  le { "=<" }
+  lrestr { "<:" }
+  override { "++" }
+  prod { "->" }
+  rrestr { ":>" }
+
+  "this"
+}
+
+@skip { whitespace | LineComment | BlockComment }
+
+
+Compare { kw<"in"> | "=" | "<" | ">" | ge | le }
+Const { !unary "-" number | number | kw<"none"> | kw<"univ"> | kw<"iden"> }
+Multiplicity { kw<"lone"> | kw<"some"> | kw<"one"> }
+Name { identifier }
+QualName { ("this" | identifier) ("/" identifier)* }
+Quantifier { kw<"all"> | kw<"no"> | kw<"sum"> | Multiplicity }
+
+
+arrowOperator { (Multiplicity | kw<"set">) prod (Multiplicity | kw<"set">) }
+Block { "{" expression* "}" }
+blockOrBar { Block | bar expression }
+declaration { kw<"disj">? commaSep1<Name> ":" kw<"disj">? expression }
+letDeclaration { Name "=" expression }
+paraDeclaration { "(" commaSep<Declaration> ")" | "[" commaSep<Declaration> "]" }
+
+
+UnaryExpression {
+  ("~" | "*" | "^") !unary expression |
+  "#" !cardinality expression |
+  (kw<"set"> | kw<"no"> | Multiplicity) !exprmult expression
+  ("!" | kw<"not">) expression
+}
+
+BinaryExpression {
+  expression !dotjoin "." expression |
+  expression !restriction (lrestr | rrestr) expression |
+  expression !intersection "&" expression |
+  expression !override override expression |
+  expression !uniondiff ("+" | "-") expression |
+  expression !compareneg ("!" | kw<"not">)? !compare Compare expression |
+  expression !conjunction (conj | kw<"and">) expression |
+  expression !bimplication (bimplication | kw<"iff">) expression
+  expression !disjunction (disj | kw<"or">) expression
+}
+
+BoxJoin {
+  expression !boxjoin "[" commaSep<expression> "]"
+}
+
+Product {
+  expression !arrow arrowOperator expression
+}
+
+Implication {
+  expression !implication (implication | kw<"implies">) expression (kw<"else"> expression)?
+}
+
+expression {
+  Const |
+  QualName |
+  "@" Name |
+  kw<"this"> |
+  UnaryExpression |
+  BinaryExpression |
+  Product |
+  BoxJoin |
+  Implication |
+  kw<"let"> commaSep1<letDeclaration> blockOrBar |
+  Quantifier commaSep1<declaration> blockOrBar |
+  "{" commaSep1<declaration> blockOrBar "}" |
+  "(" expression ")" |
+  Block
+}
+
+kw<term>           { @specialize[name={term}]<identifier, term> }
+commaSep<content>  { "" | content ("," content)* }
+commaSep1<content> { content ("," content)* }
+
+@detectDelim

@@ -1,0 +1,140 @@
+@top Alloy {
+  ModuleDeclaration?
+  ImportDeclaration*
+  paragraph*
+}
+
+@precedence {
+  unary,
+  dot,
+  box,
+  restriction,
+  arrow,
+  intersection,
+  override,
+  cardinality,
+  uniondiff,
+  quantmult,
+  compneg,
+  comp
+}
+
+ModuleDeclaration { kw<"module"> QualName ("[" commaSep1<Name> "]")?}
+ImportDeclaration { kw<"open"> QualName ("[" commaSep1<QualName> "]")? (kw<"as"> Name)? }
+paragraph {
+  SigDeclaration |
+  FactDeclaration |
+  PredDeclaration |
+  FunDeclaration |
+  AssertDeclaration |
+  CmdDeclaration
+}
+
+SigDeclaration {
+  kw<"abstract">? Multiplicity? kw<"sig"> commaSep1<Name> sigExt? "{" commaSep<decl> "}"
+}
+
+sigExt {
+  (kw<"extends"> QualName) | (kw<"in"> QualName ("+" QualName)*)
+}
+
+Multiplicity { kw<"lone"> | kw<"some"> | kw<"one"> }
+
+decl {
+  kw<"disj">? commaSep1<Name> ":" kw<"disj"> expr
+}
+
+FactDeclaration {
+  kw<"fact"> Name? block
+}
+
+PredDeclaration {
+  kw<"pred"> (QualName ".")? Name ParaDecls? block
+}
+
+FunDeclaration {
+  kw<"fun"> (QualName ".")? Name ParaDecls? ":" expr "{" expr "}"
+}
+
+ParaDecls {
+  ("(" commaSep<decl> ")") | ("[" commaSep<decl> "]")
+}
+
+AssertDeclaration {
+  kw<"assert"> Name? block
+}
+
+CmdDeclaration {
+  (Name ":")? (kw<"run"> | kw<"check">) (QualName | block) Scope?
+}
+
+Scope {
+  (kw<"for"> ~Number (kw<"but"> commaSep1<typescope>)?) | (kw<"for"> commaSep1<typescope>)
+}
+
+typescope {
+  kw<"exactly">? ~Number QualName
+}
+
+expr {
+  Const | QualName | ("@" Name) | kw<"this"> |
+  (!unary UnOp expr) |
+  (!dot expr BinOp expr)
+}
+
+Const { ("-"? Number) | kw<"none"> | kw<"univ"> | kw<"iden"> }
+
+UnOp { "!" | kw<"not"> | kw<"no"> | Multiplicity | kw<"set"> | "#" | "~" | "*" | "^" }
+
+BinOp {
+  disj
+}
+
+block { "{" expr* "}" }
+
+QualName { kw<"this/">? (identifier "/")* identifier }
+
+Name { identifier }
+
+@tokens {
+  whitespace { std.whitespace+ }
+
+  LineComment { ("//" | "--") ![\n]* }
+
+  BlockComment { "/*" blockCommentRest }
+
+  blockCommentRest { ![*] blockCommentRest | "*" blockCommentAfterStar }
+
+  blockCommentAfterStar { "/" | "*" blockCommentAfterStar | ![/*] blockCommentRest }
+
+  @precedence { BlockComment, LineComment, "/", "-" }
+
+  identifier { std.asciiLetter (std.asciiLetter | std.digit | $[_'"])* }
+
+  Number { '0' | $[1-9] std.digit* }
+
+  implication { "=>" }
+
+  ge { ">=" }
+
+  le { "=<" }
+
+  prod { "->" }
+
+  lrestr { "<:" }
+
+  rrestr { ":>" }
+
+  override { "++" }
+
+  conj { "&&" }
+
+  disj { "||" }
+
+}
+
+kw<term>           { @specialize[name={term}]<identifier, term> }
+commaSep<content>  { "" | content ("," content)* }
+commaSep1<content> { content ("," content)* }
+
+@skip { whitespace | LineComment | BlockComment }

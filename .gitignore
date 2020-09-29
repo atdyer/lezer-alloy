@@ -1,0 +1,5 @@
+node_modules
+src/parser.*
+/dist
+.cache
+.idea
