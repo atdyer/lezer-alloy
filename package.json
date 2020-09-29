@@ -12,7 +12,7 @@
   "types": "dist/index.d.ts",
   "scripts": {
     "build": "lezer-generator src/alloy.grammar -o src/parser && rollup -c",
-    "demo:dev": "parcel index.html --out-dir docs"
+    "demo:dev": "parcel build index.html --out-dir docs"
   },
   "author": "Tristan Dyer",
   "license": "MIT",
@@ -24,6 +24,7 @@
     "lezer-generator": "^0.10.5",
     "lezer-tree": "^0.10.0",
     "parcel-bundler": "^1.12.4",
+    "parcel-plugin-inline-source": "^1.0.0",
     "rollup": "^2.28.1",
     "rollup-plugin-node-resolve": "^5.2.0"
   }
